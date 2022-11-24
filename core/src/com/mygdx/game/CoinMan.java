@@ -1,0 +1,148 @@
+package com.mygdx.game;
+
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.ScreenUtils;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+public class CoinMan extends ApplicationAdapter {
+	SpriteBatch batch;
+	Texture background;
+	Texture[] man;
+	int manState=0;
+	int pause =0;
+	float gravity = 0.2f;
+	float velocity = 0;
+	int manY = 0;
+	Rectangle manRec;
+
+	Random random;
+	ArrayList<Integer> coinXs = new ArrayList<>();
+	ArrayList<Integer> coinYs = new ArrayList<>();
+	ArrayList<Rectangle> coinRec = new ArrayList<>();
+	Texture coin;
+	int coinCount;
+	ArrayList<Integer> bombXs = new ArrayList<>();
+	ArrayList<Integer> bombYs = new ArrayList<>();
+	ArrayList<Rectangle> bombRec = new ArrayList<>();
+	Texture bomb;
+	int bombCount;
+//	Sound coinSound;
+//	Sound bombSound;
+
+	@Override
+	public void create () {
+		batch = new SpriteBatch();
+		background = new Texture("bg.png");
+		man = new Texture[4];
+		man[0]= new Texture("frame-1.png");
+		man[1]= new Texture("frame-2.png");
+		man[2]= new Texture("frame-3.png");
+		man[3]= new Texture("frame-4.png");
+
+		manY = Gdx.graphics.getHeight()/2;
+		coin = new Texture("coin2.png");
+		bomb = new Texture("bomb2.png");
+		random = new Random();
+//		coinSound=Gdx.audio.newSound(Gdx.files.internal("coinSound.wav"));
+//		bombSound=Gdx.audio.newSound(Gdx.files.internal("bombSound.wav"));
+	}
+
+	public void makeCoin(){
+		float height = random.nextFloat()*Gdx.graphics.getHeight();
+
+		coinYs.add((int)height);
+		coinXs.add(Gdx.graphics.getWidth());
+	}
+	public void makeBomb(){
+		float height = random.nextFloat()*Gdx.graphics.getHeight();
+
+		bombYs.add((int)height);
+		bombXs.add(Gdx.graphics.getWidth());
+	}
+
+	@Override
+	public void render () {
+		batch.begin();
+		batch.draw(background,0,0, Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+
+		//bombs
+		if(bombCount<500){
+			bombCount++;
+		}else {
+			bombCount=0;
+			makeBomb();
+		}
+		bombRec.clear();
+		for (int j=0;j<bombYs.size();j++){
+			batch.draw(bomb,bombXs.get(j),bombYs.get(j));
+			bombXs.set(j,bombXs.get(j)-6);
+			bombRec.add(new Rectangle(bombXs.get(j),bombXs.get(j),bomb.getWidth(),bomb.getHeight()));
+		}
+		//coins
+		if(coinCount<100){
+			coinCount++;
+		}else {
+			coinCount=0;
+			makeCoin();
+		}
+
+		coinRec.clear();
+		for (int i=0;i<coinXs.size();i++){
+			batch.draw(coin,coinXs.get(i),coinYs.get(i));
+			coinXs.set(i,coinXs.get(i)-4);
+			coinRec.add(new Rectangle(coinXs.get(i),coinYs.get(i),coin.getWidth(),coin.getHeight()));
+		}
+
+		if(Gdx.input.justTouched()){
+			velocity = -10;
+		}
+		if(pause<10){
+			pause++;
+		}else {
+			pause=0;
+			if(manState<3){
+				manState++;
+			}else {
+				manState=0;
+			}
+		}
+		velocity += gravity;
+		manY -= velocity;
+		if (manY<=0){
+			manY=0;
+		}
+
+		batch.draw(man[manState],Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY);
+
+		manRec= new Rectangle(Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY,man[manState].getWidth(),man[manState].getHeight());
+		for (int i=0;i<coinRec.size();i++){
+			if (Intersector.overlaps(manRec,coinRec.get(i))){
+//				coinSound.play();
+				Gdx.app.log("coin","coin collision!!");
+			}
+//			coinSound.stop();
+		}
+		for (int i=0;i<bombRec.size();i++){
+			if (Intersector.overlaps(manRec,bombRec.get(i))){
+//				bombSound.play();
+				Gdx.app.log("bomb","bomb collision!!");
+			}
+//			bombSound.stop();
+		}
+
+		batch.end();
+	}
+	
+	@Override
+	public void dispose () {
+		batch.dispose();
+	}
+}
