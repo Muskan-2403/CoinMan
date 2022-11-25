@@ -3,7 +3,9 @@ package com.mygdx.game;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
@@ -37,6 +39,15 @@ public class CoinMan extends ApplicationAdapter {
 //	Sound coinSound;
 //	Sound bombSound;
 
+	int score =0;
+	BitmapFont font;
+	int gameState=0;
+	Texture[] dizzy;
+	int pauseD=0;
+	int dizzyState=0;
+//	Sound gameOver;
+//	boolean gameOverPlayed;
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
@@ -53,6 +64,15 @@ public class CoinMan extends ApplicationAdapter {
 		random = new Random();
 //		coinSound=Gdx.audio.newSound(Gdx.files.internal("coinSound.wav"));
 //		bombSound=Gdx.audio.newSound(Gdx.files.internal("bombSound.wav"));
+
+		font= new BitmapFont();
+		font.setColor(Color.WHITE);
+		font.getData().setScale(10);
+		dizzy=new Texture[2];
+		dizzy[0]=new Texture("dizzy-1.png");
+		dizzy[1]=new Texture("dizzy-2.png");
+//		gameOver=Gdx.audio.newSound(Gdx.files.internal("gameOver.wav"));
+//		gameOverPlayed=false;
 	}
 
 	public void makeCoin(){
@@ -73,71 +93,118 @@ public class CoinMan extends ApplicationAdapter {
 		batch.begin();
 		batch.draw(background,0,0, Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
 
-		//bombs
-		if(bombCount<500){
-			bombCount++;
-		}else {
-			bombCount=0;
-			makeBomb();
-		}
-		bombRec.clear();
-		for (int j=0;j<bombYs.size();j++){
-			batch.draw(bomb,bombXs.get(j),bombYs.get(j));
-			bombXs.set(j,bombXs.get(j)-6);
-			bombRec.add(new Rectangle(bombXs.get(j),bombXs.get(j),bomb.getWidth(),bomb.getHeight()));
-		}
-		//coins
-		if(coinCount<100){
-			coinCount++;
-		}else {
-			coinCount=0;
-			makeCoin();
-		}
-
-		coinRec.clear();
-		for (int i=0;i<coinXs.size();i++){
-			batch.draw(coin,coinXs.get(i),coinYs.get(i));
-			coinXs.set(i,coinXs.get(i)-4);
-			coinRec.add(new Rectangle(coinXs.get(i),coinYs.get(i),coin.getWidth(),coin.getHeight()));
-		}
-
-		if(Gdx.input.justTouched()){
-			velocity = -10;
-		}
-		if(pause<10){
-			pause++;
-		}else {
-			pause=0;
-			if(manState<3){
-				manState++;
+		if (gameState==1){
+			// Game is live
+//			gameOverPlayed=false;
+			//bombs
+			if(bombCount<500){
+				bombCount++;
 			}else {
-				manState=0;
+				bombCount=0;
+				makeBomb();
 			}
-		}
-		velocity += gravity;
-		manY -= velocity;
-		if (manY<=0){
-			manY=0;
-		}
+			bombRec.clear();
+			for (int j=0;j<bombYs.size();j++){
+				batch.draw(bomb,bombXs.get(j),bombYs.get(j));
+				bombXs.set(j,bombXs.get(j)-6);
+				bombRec.add(new Rectangle(bombXs.get(j),bombYs.get(j),bomb.getWidth(),bomb.getHeight()));
+			}
+			//coins
+			if(coinCount<100){
+				coinCount++;
+			}else {
+				coinCount=0;
+				makeCoin();
+			}
 
-		batch.draw(man[manState],Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY);
+			coinRec.clear();
+			for (int i=0;i<coinXs.size();i++){
+				batch.draw(coin,coinXs.get(i),coinYs.get(i));
+				coinXs.set(i,coinXs.get(i)-4);
+				coinRec.add(new Rectangle(coinXs.get(i),coinYs.get(i),coin.getWidth(),coin.getHeight()));
+			}
 
+
+			if(Gdx.input.justTouched()){
+				velocity = -10;
+			}
+			if(pause<10){
+				pause++;
+			}else {
+				pause=0;
+				if(manState<3){
+					manState++;
+				}else {
+					manState=0;
+				}
+			}
+			velocity += gravity;
+			manY -= velocity;
+			if (manY<=0){
+				manY=0;
+			}
+		}else if (gameState==0){
+			//waiting to start
+			if (Gdx.input.justTouched()){
+				gameState=1;
+			}
+		}else if (gameState==2){
+			//game over
+//			if (gameOverPlayed==false){
+//				gameOver.play();
+//				gameOverPlayed=true;
+//			}
+			if (Gdx.input.justTouched()){
+				gameState=1;
+			}else
+			if(pauseD<20){
+				pauseD++;
+			}else {
+				pauseD=0;
+				if(dizzyState<1){
+					dizzyState++;
+				}else {
+					dizzyState=0;
+				}
+			}
+			manY = Gdx.graphics.getHeight()/2;
+			score=0;
+			velocity=0;
+			coinXs.clear();
+			coinYs.clear();
+			coinRec.clear();
+			coinCount=0;
+			bombXs.clear();
+			bombYs.clear();
+			bombRec.clear();
+			bombCount=0;
+		}
+		if (gameState==2){
+			batch.draw(dizzy[dizzyState],Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY);
+		}else {
+			batch.draw(man[manState],Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY);
+		}
 		manRec= new Rectangle(Gdx.graphics.getWidth()/2-man[manState].getWidth()/2,manY,man[manState].getWidth(),man[manState].getHeight());
 		for (int i=0;i<coinRec.size();i++){
 			if (Intersector.overlaps(manRec,coinRec.get(i))){
 //				coinSound.play();
-				Gdx.app.log("coin","coin collision!!");
+//				Gdx.app.log("coin","coin collision!!");
+				score++;
+				coinRec.remove(i);
+				coinXs.remove(i);
+				coinYs.remove(i);
+				break;
 			}
-//			coinSound.stop();
 		}
 		for (int i=0;i<bombRec.size();i++){
 			if (Intersector.overlaps(manRec,bombRec.get(i))){
 //				bombSound.play();
-				Gdx.app.log("bomb","bomb collision!!");
+//				Gdx.app.log("bomb","bomb collision!!");
+				gameState=2;
 			}
-//			bombSound.stop();
 		}
 
+		font.draw(batch,String.valueOf(score),100,200);
 		batch.end();
 	}
 	
